@@ -2,7 +2,7 @@ import tweepy, logging, requests, json, random
 import pandas as pd
 from time import sleep
 from creds import * 
-
+from os import environ
 
 def authenticate_twitter(logger):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -80,6 +80,13 @@ def get_weather_data(city_id, weather_api_key, country_name):
     return tweet_string
 
 def main():
+    # Set the environ variables
+    consumer_key = environ['consumer_key']
+    consumer_secret = environ['consumer_secret']
+    access_token = environ['access_token']
+    access_token_secret = environ['access_token_secret']
+    weather_api_key = environ['weather_api_key']
+
     # Create a logger
     logger = logging.getLogger()
 
