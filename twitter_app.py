@@ -3,7 +3,8 @@ import pandas as pd
 from time import sleep
 from creds import * 
 
-def authenticate_twitter():
+
+def authenticate_twitter(logger):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
@@ -83,24 +84,26 @@ def main():
     logger = logging.getLogger()
 
     # Authenticate to Twitter
-    api = authenticate_twitter()
+    api = authenticate_twitter(logger)
 
     # Read in the list of cities available from the api
     city_dict = read_cities('city.list.json')
 
-    # Choose a random city
-    city_id, country_code = choose_random_city(city_dict)
+    while True:
+        # Choose a random city
+        city_id, country_code = choose_random_city(city_dict)
 
-    country_name = get_english_name('wikipedia-iso-country-codes.csv', country_code)
+        country_name = get_english_name('wikipedia-iso-country-codes.csv', country_code)
 
-    # Make the tweet with weather data
-    tweet_string = get_weather_data(city_id, weather_api_key, country_name)
+        # Make the tweet with weather data
+        tweet_string = get_weather_data(city_id, weather_api_key, country_name)
 
-    # Create a tweet
-    api.update_status(tweet_string)
+        # Create a tweet
+        api.update_status(tweet_string)
 
-    # Pause for a few hours
-    #sleep(8640)
+        # Pause for a few hours
+        sleep(8640)
+        #sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
    main()
