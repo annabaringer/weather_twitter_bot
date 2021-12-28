@@ -3,7 +3,6 @@ import pandas as pd
 from time import sleep
 from creds import * 
 
-
 def authenticate_twitter():
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
@@ -19,56 +18,89 @@ def authenticate_twitter():
     
     return api
 
-# Create a logger
-logger = logging.getLogger()
 
-# Authenticate to Twitter
-api = authenticate_twitter()
+def read_cities(json_filename):
+    f = open(json_filename)
+    city_dict = json.load(f)
+    f.close()
 
-# Get current weather 
+    return city_dict
 
-# Read in the list of cities available
-f = open('city.list.json')
-city_dict = json.load(f)
-f.close()
 
-# Read in the country codes 
-country_codes = pd.read_csv('wikipedia-iso-country-codes.csv')
+def read_country_crosswalk(filename):
+    # Read in the country codes 
+    country_codes = pd.read_csv(filename)
 
-# Randomly choose a city id
-random_city = random.choice(list(city_dict))
+    return country_codes
 
-# Get city id and country
-city_id = random_city['id']
-country_code= random_city['country']
 
-# Figure out the english name for the country 
-country_name = country_codes.loc[country_codes['Alpha-2 code'] == country_code, 'English short name lower case'].iloc[0]
+def choose_random_city(city_dict):
+    # Randomly choose a city id
+    random_city = random.choice(list(city_dict))
 
- 
-# base_url variable to store url
-complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
- 
-# get the data
-response = requests.get(complete_url)
+    # Get city id and country
+    city_id = random_city['id']
+    country_code= random_city['country']
 
-# convert to json 
-weather = response.json()
+    return city_id, country_code
 
-if weather["cod"] != "404":
-    weather_desc = weather['weather'][0]['description']
-    weather_temp=weather['main']['temp']
-    weather_feelslike=weather['main']['feels_like']
-    weather_min=weather['main']['temp_min']
-    weather_max=weather['main']['temp_max']
-    weather_name=weather['name']
-    weather_humidity=weather['main']['humidity']
 
-tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
+def get_english_name(crosswalk_filename, country_code):
+    # Get the crosswalk of country code to english name 
+    country_codes = read_country_crosswalk(crosswalk_filename)
 
-# Create a tweet
-api.update_status(tweet_string)
+    # Figure out the english name for the country 
+    country_name = country_codes.loc[country_codes['Alpha-2 code'] == country_code, 'English short name lower case'].iloc[0]
 
-# Pause for a few hours
-#sleep(8640)
+    return country_name
 
+
+def get_weather_data(city_id, weather_api_key, country_name):
+    # Get current weather 
+    complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
+    
+    # get the data
+    response = requests.get(complete_url)
+
+    # convert to json 
+    weather = response.json()
+
+    if weather["cod"] != "404":
+        weather_desc = weather['weather'][0]['description']
+        weather_temp=weather['main']['temp']
+        weather_feelslike=weather['main']['feels_like']
+        weather_min=weather['main']['temp_min']
+        weather_max=weather['main']['temp_max']
+        weather_name=weather['name']
+        weather_humidity=weather['main']['humidity']
+
+    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
+
+    return tweet_string
+
+def main():
+    # Create a logger
+    logger = logging.getLogger()
+
+    # Authenticate to Twitter
+    api = authenticate_twitter()
+
+    # Read in the list of cities available from the api
+    city_dict = read_cities('city.list.json')
+
+    # Choose a random city
+    city_id, country_code = choose_random_city(city_dict)
+
+    country_name = get_english_name('wikipedia-iso-country-codes.csv', country_code)
+
+    # Make the tweet with weather data
+    tweet_string = get_weather_data(city_id, weather_api_key, country_name)
+
+    # Create a tweet
+    api.update_status(tweet_string)
+
+    # Pause for a few hours
+    #sleep(8640)
+
+if __name__ == "__main__":
+   main()
