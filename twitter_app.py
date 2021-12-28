@@ -4,7 +4,7 @@ from time import sleep
 #from creds import * 
 from os import environ
 
-def authenticate_twitter(logger):
+def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
@@ -91,7 +91,7 @@ def main():
     logger = logging.getLogger()
 
     # Authenticate to Twitter
-    api = authenticate_twitter(logger)
+    api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret)
 
     # Read in the list of cities available from the api
     city_dict = read_cities('city.list.json')
