@@ -1,7 +1,7 @@
 import tweepy, logging, requests, json, random
 import pandas as pd
 from time import sleep
-from creds import * 
+#from creds import * 
 from os import environ
 
 def authenticate_twitter(logger):
@@ -109,8 +109,8 @@ def main():
         api.update_status(tweet_string)
 
         # Pause for a few hours
-        sleep(8640)
-        #sleep(60) # FOR TESTING
+        #sleep(8640)
+        sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
    main()
