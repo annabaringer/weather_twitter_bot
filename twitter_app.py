@@ -145,7 +145,7 @@ def main():
         pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{city_name} {country_name}/Image_2.jpg', f'images/{city_name} {country_name}/Image_3.jpg')
         media_ids = [api.media_upload(i).media_id_string for i in pics] 
         
-         # Generate tweet with media 
+        # Generate tweet with media 
         api.update_status(status=tweet_string, media_ids=media_ids)
 
         # Generate tweet with media 
