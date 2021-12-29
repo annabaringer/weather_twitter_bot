@@ -1,8 +1,8 @@
 import tweepy, logging, requests, json, random
 import pandas as pd
 from time import sleep
-#from creds import * 
 from os import environ
+
 
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -20,17 +20,25 @@ def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, ac
     return api
 
 
-def read_cities(json_filename):
-    f = open(json_filename)
-    city_dict = json.load(f)
-    f.close()
+def read_cities(json_filename, logger):
+    try:
+        f = open(json_filename)
+        city_dict = json.load(f)
+        f.close()
+    except Exception as e:
+        logger.error("Error reading {json_filename}", exc_info=True)
+        raise e
 
     return city_dict
 
 
-def read_country_crosswalk(filename):
-    # Read in the country codes 
-    country_codes = pd.read_csv(filename)
+def read_country_crosswalk(filename, logger):
+    try:
+        # Read in the country codes 
+        country_codes = pd.read_csv(filename)
+    except Exception as e:
+        logger.error("Error reading {filename}", exc_info=True)
+        raise e
 
     return country_codes
 
@@ -60,24 +68,31 @@ def get_weather_data(city_id, weather_api_key, country_name):
     # Get current weather 
     complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
     
-    # get the data
-    response = requests.get(complete_url)
+    # Set a flag to keep track of a successful weather grab
+    successful_weather = False
 
-    # convert to json 
-    weather = response.json()
+    while(successful_weather == False):
+        # get the data
+        response = requests.get(complete_url)
 
-    if weather["cod"] != "404":
-        weather_desc = weather['weather'][0]['description']
-        weather_temp=weather['main']['temp']
-        weather_feelslike=weather['main']['feels_like']
-        weather_min=weather['main']['temp_min']
-        weather_max=weather['main']['temp_max']
-        weather_name=weather['name']
-        weather_humidity=weather['main']['humidity']
+        # Convert to json 
+        weather = response.json()
+
+        if weather["cod"] != "404":
+            weather_desc = weather['weather'][0]['description']
+            weather_temp=weather['main']['temp']
+            weather_feelslike=weather['main']['feels_like']
+            weather_min=weather['main']['temp_min']
+            weather_max=weather['main']['temp_max']
+            weather_name=weather['name']
+            weather_humidity=weather['main']['humidity']
+            weather_main=weather['weather'][0]['main']
+
+            successful_weather = True
 
     tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
-    return tweet_string
+    return tweet_string, weather_main
 
 def main():
     # Set the environ variables
@@ -94,22 +109,44 @@ def main():
     api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret)
 
     # Read in the list of cities available from the api
-    city_dict = read_cities('city.list.json')
+    city_dict = read_cities('data/city.list.json')
 
     while True:
         # Choose a random city
         city_id, country_code = choose_random_city(city_dict)
 
-        country_name = get_english_name('wikipedia-iso-country-codes.csv', country_code)
+        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code)
 
-        # Make the tweet with weather data
-        tweet_string = get_weather_data(city_id, weather_api_key, country_name)
+        # Make the tweet string with weather data
+        tweet_string, weather_main = get_weather_data(city_id, weather_api_key, country_name)
+
+        '''
+        # Determine which picture to tweet 
+        if weather_main == 'Thunderstorm':
+            image_path = ''
+        elif weather_main == 'Drizzle':
+            pass 
+        elif weather_main == 'Rain':
+            pass 
+        elif weather_main == 'Snow':
+            pass 
+        elif weather_main == 'Clear':
+            pass 
+        elif weather_main == 'Clouds':
+            pass
+        else:
+            # Add picture of mist, have, dust etc.
+            pass
+        '''
+        image_path = 'images/thunder.jpg'
+        # Generate text tweet with media 
+        status = api.update_with_media(image_path, tweet_string)
 
         # Create a tweet
-        api.update_status(tweet_string)
+        api.update_status(status=tweet_string)
 
-        # Pause for a few hours
-        #sleep(8640)
+        # Pause for a 2 hours
+        #sleep(7200)
         sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
