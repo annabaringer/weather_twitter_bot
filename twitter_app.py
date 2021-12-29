@@ -189,8 +189,8 @@ def main():
             shutil.rmtree(f'images/{city_name} {country_name}')
 
             # Pause for a 2 hours
-            #sleep(7200)
-            sleep(60) # FOR TESTING
+            sleep(7200)
+            #sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
    main()
