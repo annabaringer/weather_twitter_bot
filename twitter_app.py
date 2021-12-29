@@ -1,11 +1,13 @@
 import tweepy, logging, requests, json, random
 import pandas as pd
 import shutil
+import os 
 from time import sleep
-from os import environ, path
-import os.path
 from bing_image_downloader import downloader
+import ssl
 
+# for testing
+#from creds import * 
 
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -93,10 +95,50 @@ def get_weather_data(city_id, weather_api_key, country_name):
 
             successful_weather = True
 
-    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
+        # Decide which emoji to use in the tweet
+        if weather_main.lower()=='thunderstorm':
+            emoji = '\U000026A1'
+        elif weather_main.lower()=='drizzle' or weather_main=='rain':
+            emoji = '\U00002614'
+        elif weather_main.lower()=='snow':
+            emoji = '\U00002744'
+        elif weather_main.lower()=='clear':
+            emoji = '\U00002600'
+        elif weather_main.lower()=='clouds':
+            emoji = '\U000026C5'
+        else:
+            emoji = '\U0001F301'
+
+    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
     return tweet_string, weather_main, weather_name
 
+
+def get_photos(weather_main, city_name, country_name, api, logger):
+    # Determine which picture to tweet for the weather
+    if weather_main.lower() in ['thunderstorm', 'drizzle', 'rain', 'snow', 'clear', 'clouds']:
+        image_path = f'images/{weather_main.lower()}.png'
+    else:
+        # Add picture of mist, have, dust etc.
+        image_path = 'images/mist.jpg'
+
+    # Scrape three pictures of the location
+    downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
+
+    # Make sure it downloaded 3 images
+    pics = os.listdir(f'images/{city_name} {country_name}')
+
+    if len(pics)==3:
+        successful_images=True
+
+        logger.info(f"Successful image download for {city_name} {country_name}", exc_info=True)
+
+    pics = [f'images/{city_name} {country_name}/{file}' for file in pics]
+    pics += [image_path]
+    media_ids = [api.media_upload(i).media_id_string for i in pics] 
+
+    return media_ids, successful_images
+    
 def main():
     # Set the environ variables
     consumer_key = environ['consumer_key']
@@ -104,9 +146,13 @@ def main():
     access_token = environ['access_token']
     access_token_secret = environ['access_token_secret']
     weather_api_key = environ['weather_api_key']
+    
+
+    ssl._create_default_https_context = ssl._create_unverified_context
 
     # Create a logger
     logger = logging.getLogger()
+    logging.basicConfig(level=logging.INFO)
 
     # Authenticate to Twitter
     api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret)
@@ -129,35 +175,15 @@ def main():
             # Make the tweet string with weather data
             tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
 
-            # Determine which picture to tweet for the weather
-            if weather_main == 'Thunderstorm':
-                image_path = 'images/thunder.jpg'
-            elif weather_main == 'Drizzle':
-                image_path = 'images/drizzle.png' 
-            elif weather_main == 'Rain':
-                image_path = 'images/rain.jpg' 
-            elif weather_main == 'Snow':
-                image_path = 'images/snow.png' 
-            elif weather_main == 'Clear':
-                image_path = 'images/clear.png' 
-            elif weather_main == 'Clouds':
-                image_path = 'images/cloud.png'
-            else:
-                # Add picture of mist, have, dust etc.
-                image_path = 'images/mist.jpg'
+            logger.info(f"Generating tweets for {city_name} {country_name}", exc_info=True)
 
-            # Scrape three pictures of the location
-            downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
+            # Get photos for the tweet
+            media_ids, successful_images = get_photos(weather_main, city_name, country_name, api, logger)
 
-            # Make sure it downloaded 3 images
-            if os.path.isfile(f'images/{city_name} {country_name}/Image_1.jpg') and os.path.isfile(f'images/{city_name} {country_name}/Image_2.jpg') and os.path.isfile(f'images/{city_name} {country_name}/Image_3.jpg'):
-                successful_images=True
-
-            pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{city_name} {country_name}/Image_2.jpg', f'images/{city_name} {country_name}/Image_3.jpg')
-            media_ids = [api.media_upload(i).media_id_string for i in pics] 
-        
             # Generate tweet with media 
             api.update_status(status=tweet_string, media_ids=media_ids)
+
+            logger.info(f"Cleaning up images for {city_name} {country_name}", exc_info=True)
 
             # Clean up the images
             shutil.rmtree(f'images/{city_name} {country_name}')
