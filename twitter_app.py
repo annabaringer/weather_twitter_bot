@@ -140,7 +140,7 @@ def main():
             image_path = 'images/mist.jpg'
 
         # Scrape three pictures of the location
-        downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False, timeout=60, verbose=True)
+        downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
 
         pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{city_name} {country_name}/Image_2.jpg', f'images/{city_name} {country_name}/Image_3.jpg')
         media_ids = [api.media_upload(i).media_id_string for i in pics] 
