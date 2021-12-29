@@ -1,9 +1,9 @@
 import tweepy, logging, requests, json, random
 import pandas as pd
+import shutil
 from time import sleep
 from os import environ
 from bing_image_downloader import downloader
-import shutil
 
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -160,7 +160,7 @@ def main():
                 shutil.rmtree(f'images/{city_name} {country_name}')
 
             except Exception as e:
-                raise e
+                successful_images = False
 
         # If it gets out of the while loop without an exception, mark true
         successful_images = True
