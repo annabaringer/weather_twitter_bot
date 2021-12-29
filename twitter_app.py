@@ -2,7 +2,8 @@ import tweepy, logging, requests, json, random
 import pandas as pd
 from time import sleep
 from os import environ
-
+from bing_image_downloader import downloader
+import shutil
 
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -92,7 +93,7 @@ def get_weather_data(city_id, weather_api_key, country_name):
 
     tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
-    return tweet_string, weather_main
+    return tweet_string, weather_main, weather_name
 
 def main():
     # Set the environ variables
@@ -115,12 +116,13 @@ def main():
         # Choose a random city
         city_id, country_code = choose_random_city(city_dict)
 
+        # Get the english name of the country
         country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
 
         # Make the tweet string with weather data
-        tweet_string, weather_main = get_weather_data(city_id, weather_api_key, country_name)
+        tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
 
-        # Determine which picture to tweet 
+        # Determine which picture to tweet for the weather
         if weather_main == 'Thunderstorm':
             image_path = 'images/thunder.jpg'
         elif weather_main == 'Drizzle':
@@ -137,12 +139,24 @@ def main():
             # Add picture of mist, have, dust etc.
             image_path = 'images/mist.jpg'
 
+        # Scrape three pictures of the location
+        downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False, timeout=60, verbose=True)
+
+        pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{{city_name} {country_name}/Image_2.jpg', f'images/{{city_name} {country_name}/Image_3.jpg')
+        media_ids = [api.media_upload(i).media_id_string for i in pics] 
+        
+         # Generate tweet with media 
+        api.update_status(status=tweet_string, media_ids=media_ids)
+
         # Generate tweet with media 
-        status = api.update_status_with_media(filename=image_path, status=tweet_string)
+        #status = api.update_status_with_media(filename=image_path, status=tweet_string)
+
+        # Clean up the images
+        shutil.rmtree(f'images/{city_name} {country_name}')
 
         # Pause for a 2 hours
-        sleep(7200)
-        #sleep(60) # FOR TESTING
+        #sleep(7200)
+        sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
    main()
