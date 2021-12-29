@@ -113,46 +113,57 @@ def main():
     city_dict = read_cities('data/city.list.json', logger)
 
     while True:
-        # Choose a random city
-        city_id, country_code = choose_random_city(city_dict)
+        # flag to keep track of whether or not the images were successful 
+        successful_images = False
 
-        # Get the english name of the country
-        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
+        while successful_images == False:
+            try:
+                # Choose a random city
+                city_id, country_code = choose_random_city(city_dict)
 
-        # Make the tweet string with weather data
-        tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
+                # Get the english name of the country
+                country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
 
-        # Determine which picture to tweet for the weather
-        if weather_main == 'Thunderstorm':
-            image_path = 'images/thunder.jpg'
-        elif weather_main == 'Drizzle':
-            image_path = 'images/drizzle.png' 
-        elif weather_main == 'Rain':
-            image_path = 'images/rain.jpg' 
-        elif weather_main == 'Snow':
-            image_path = 'images/snow.png' 
-        elif weather_main == 'Clear':
-            image_path = 'images/clear.png' 
-        elif weather_main == 'Clouds':
-            image_path = 'images/cloud.png'
-        else:
-            # Add picture of mist, have, dust etc.
-            image_path = 'images/mist.jpg'
+                # Make the tweet string with weather data
+                tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
 
-        # Scrape three pictures of the location
-        downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
+                # Determine which picture to tweet for the weather
+                if weather_main == 'Thunderstorm':
+                    image_path = 'images/thunder.jpg'
+                elif weather_main == 'Drizzle':
+                    image_path = 'images/drizzle.png' 
+                elif weather_main == 'Rain':
+                    image_path = 'images/rain.jpg' 
+                elif weather_main == 'Snow':
+                    image_path = 'images/snow.png' 
+                elif weather_main == 'Clear':
+                    image_path = 'images/clear.png' 
+                elif weather_main == 'Clouds':
+                    image_path = 'images/cloud.png'
+                else:
+                    # Add picture of mist, have, dust etc.
+                    image_path = 'images/mist.jpg'
 
-        pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{city_name} {country_name}/Image_2.jpg', f'images/{city_name} {country_name}/Image_3.jpg')
-        media_ids = [api.media_upload(i).media_id_string for i in pics] 
-        
-        # Generate tweet with media 
-        api.update_status(status=tweet_string, media_ids=media_ids)
+                # Scrape three pictures of the location
+                downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
 
-        # Generate tweet with media 
-        #status = api.update_status_with_media(filename=image_path, status=tweet_string)
+                pics = (image_path, f'images/{city_name} {country_name}/Image_1.jpg', f'images/{city_name} {country_name}/Image_2.jpg', f'images/{city_name} {country_name}/Image_3.jpg')
+                media_ids = [api.media_upload(i).media_id_string for i in pics] 
+                
+                # Generate tweet with media 
+                api.update_status(status=tweet_string, media_ids=media_ids)
 
-        # Clean up the images
-        shutil.rmtree(f'images/{city_name} {country_name}')
+                # Generate tweet with media 
+                #status = api.update_status_with_media(filename=image_path, status=tweet_string)
+
+                # Clean up the images
+                shutil.rmtree(f'images/{city_name} {country_name}')
+
+            except Exception as e:
+                raise e
+
+        # If it gets out of the while loop without an exception, mark true
+        successful_images = True
 
         # Pause for a 2 hours
         #sleep(7200)
