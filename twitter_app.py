@@ -140,7 +140,7 @@ def main():
         '''
         image_path = 'images/thunder.jpg'
         # Generate text tweet with media 
-        status = api.update_with_media(image_path, tweet_string)
+        status = api.update_status_with_media(filename=image_path, status=tweet_string)
 
         # Create a tweet
         api.update_status(status=tweet_string)
