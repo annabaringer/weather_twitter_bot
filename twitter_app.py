@@ -54,9 +54,9 @@ def choose_random_city(city_dict):
     return city_id, country_code
 
 
-def get_english_name(crosswalk_filename, country_code):
+def get_english_name(crosswalk_filename, country_code, logger):
     # Get the crosswalk of country code to english name 
-    country_codes = read_country_crosswalk(crosswalk_filename)
+    country_codes = read_country_crosswalk(crosswalk_filename, logger)
 
     # Figure out the english name for the country 
     country_name = country_codes.loc[country_codes['Alpha-2 code'] == country_code, 'English short name lower case'].iloc[0]
@@ -109,13 +109,13 @@ def main():
     api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret)
 
     # Read in the list of cities available from the api
-    city_dict = read_cities('data/city.list.json')
+    city_dict = read_cities('data/city.list.json', logger)
 
     while True:
         # Choose a random city
         city_id, country_code = choose_random_city(city_dict)
 
-        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code)
+        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
 
         # Make the tweet string with weather data
         tweet_string, weather_main = get_weather_data(city_id, weather_api_key, country_name)
