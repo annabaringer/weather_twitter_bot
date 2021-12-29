@@ -120,30 +120,25 @@ def main():
         # Make the tweet string with weather data
         tweet_string, weather_main = get_weather_data(city_id, weather_api_key, country_name)
 
-        '''
         # Determine which picture to tweet 
         if weather_main == 'Thunderstorm':
-            image_path = ''
+            image_path = 'images/thunder.jpg'
         elif weather_main == 'Drizzle':
-            pass 
+            image_path = 'images/drizzle.jpg' 
         elif weather_main == 'Rain':
-            pass 
+            image_path = 'images/rain.jpg' 
         elif weather_main == 'Snow':
-            pass 
+            image_path = 'images/snow.jpg' 
         elif weather_main == 'Clear':
-            pass 
+            image_path = 'images/clear.jpg' 
         elif weather_main == 'Clouds':
-            pass
+            image_path = 'images/cloud.jpg'
         else:
             # Add picture of mist, have, dust etc.
-            pass
-        '''
-        image_path = 'images/thunder.jpg'
-        # Generate text tweet with media 
-        status = api.update_status_with_media(filename=image_path, status=tweet_string)
+            image_path = 'images/mist.jpg'
 
-        # Create a tweet
-        api.update_status(status=tweet_string)
+        # Generate tweet with media 
+        status = api.update_status_with_media(filename=image_path, status=tweet_string)
 
         # Pause for a 2 hours
         #sleep(7200)
