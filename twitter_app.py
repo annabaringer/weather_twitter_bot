@@ -141,8 +141,8 @@ def main():
         status = api.update_status_with_media(filename=image_path, status=tweet_string)
 
         # Pause for a 2 hours
-        #sleep(7200)
-        sleep(60) # FOR TESTING
+        sleep(7200)
+        #sleep(60) # FOR TESTING
 
 if __name__ == "__main__":
    main()
