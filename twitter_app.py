@@ -124,15 +124,15 @@ def main():
         if weather_main == 'Thunderstorm':
             image_path = 'images/thunder.jpg'
         elif weather_main == 'Drizzle':
-            image_path = 'images/drizzle.jpg' 
+            image_path = 'images/drizzle.png' 
         elif weather_main == 'Rain':
             image_path = 'images/rain.jpg' 
         elif weather_main == 'Snow':
-            image_path = 'images/snow.jpg' 
+            image_path = 'images/snow.png' 
         elif weather_main == 'Clear':
-            image_path = 'images/clear.jpg' 
+            image_path = 'images/clear.png' 
         elif weather_main == 'Clouds':
-            image_path = 'images/cloud.jpg'
+            image_path = 'images/cloud.png'
         else:
             # Add picture of mist, have, dust etc.
             image_path = 'images/mist.jpg'
