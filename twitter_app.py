@@ -6,10 +6,21 @@ from time import sleep
 from bing_image_downloader import downloader
 import ssl
 
-# for testing
-#from creds import * 
-
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
+    '''
+    Authenticates to twitter. 
+
+        Parameters:
+            logger (logger object)
+            consumer_key (string): for twitter api
+            consumer_secret (string): for twitter api
+            access_token (string): for twitter api 
+            access_token_secret (string): for twitter api
+            
+        Returns:
+            api: api object already authenticated
+    '''
+
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
 
@@ -26,6 +37,17 @@ def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, ac
 
 
 def read_cities(json_filename, logger):
+    '''
+    Reads in the file of cities available from the Open Weather API.
+
+        Parameters:
+            json_filename (string): file name of the json file with the city names available
+            logger (logger object)
+            
+        Returns:
+            city_dict: dict of cities available for the Open Weather API.
+    '''
+
     try:
         f = open(json_filename)
         city_dict = json.load(f)
@@ -38,6 +60,17 @@ def read_cities(json_filename, logger):
 
 
 def read_country_crosswalk(filename, logger):
+    '''
+    Reads in the csv file of county abbrev and their long form english names
+
+        Parameters:
+            filename (string): file name of the csv file with the county abbrev and their long form english names
+            logger (logger object)
+            
+        Returns:
+            city_dict: pandas dataframe with the country abbreviations and their long forms
+    '''
+
     try:
         # Read in the country codes 
         country_codes = pd.read_csv(filename)
@@ -49,6 +82,17 @@ def read_country_crosswalk(filename, logger):
 
 
 def choose_random_city(city_dict):
+    '''
+    Chooses a random city id to pull the weather from
+
+        Parameters:
+            city_dict: the dict of cities available in the Open Weather API
+            
+        Returns:
+            city_id: the randomly choosen city id
+            country_code: the country code for the randomly choosen city
+    '''
+
     # Randomly choose a city id
     random_city = random.choice(list(city_dict))
 
@@ -60,6 +104,18 @@ def choose_random_city(city_dict):
 
 
 def get_english_name(crosswalk_filename, country_code, logger):
+    '''
+    Gets the english name of the country abbreviation from the randomly choosen city. 
+
+        Parameters:
+            crosswalk_filename (string): file name of the csv file with the county abbrev and their long form english names
+            country_code: the county abbreviation of the randomly choosen city
+            logger (logger object)
+            
+        Returns:
+            country_name: the english name of the country of the random city
+    '''
+
     # Get the crosswalk of country code to english name 
     country_codes = read_country_crosswalk(crosswalk_filename, logger)
 
@@ -70,6 +126,20 @@ def get_english_name(crosswalk_filename, country_code, logger):
 
 
 def get_weather_data(city_id, weather_api_key, country_name):
+    '''
+    Gets the weather of the randomly choosen city id. 
+
+        Parameters:
+            city_id (string): file name of the csv file with the county abbrev and their long form english names
+            weather_api_key (string): the api key for the Open Weather API
+            country_name (string): the english country name of the randomly choosen city 
+            
+        Returns:
+            tweet_string (string): the sentence to be tweeted 
+            weather_main (string): the main description of the weather (eg. rain, snow, clouds)
+            weather_name (string): the name of the city with the random weather 
+    '''
+
     # Get current weather 
     complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
     
@@ -115,6 +185,22 @@ def get_weather_data(city_id, weather_api_key, country_name):
 
 
 def get_photos(weather_main, city_name, country_name, api, logger):
+    '''
+    Determines which photos to tweet out with the weather. Scrapes 3 pictures of the city from Bing.
+    Adds one pre-determined picture based on the weather description.
+
+        Parameters:
+            weather_main (string): the main description of the weather (eg. rain, snow, clouds)
+            city_name (string): the main description of the weather (eg. rain, snow, clouds)
+            country_name (string): the english country name of the randomly choosen city 
+            api: api object already authenticated
+            logger (logger object)
+
+        Returns:
+            media_ids (list): list of media strings already formatted with twitter api
+            successful_images (boolean): flag for if images were succesfully downloaded from Bing
+    '''
+
     # Determine which picture to tweet for the weather
     if weather_main.lower() in ['thunderstorm', 'drizzle', 'rain', 'snow', 'clear', 'clouds']:
         image_path = f'images/{weather_main.lower()}.png'
