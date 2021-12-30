@@ -160,37 +160,31 @@ def main():
     # Read in the list of cities available from the api
     city_dict = read_cities('data/city.list.json', logger)
 
+    # Flag to keep track of successful pic download 
+    successful_images = False
 
-    while True:
-        # Flag to keep track of successful pic download 
-        successful_images = False
+    while successful_images==False:
+        # Choose a random city
+        city_id, country_code = choose_random_city(city_dict)
 
-        while successful_images==False:
-            # Choose a random city
-            city_id, country_code = choose_random_city(city_dict)
+        # Get the english name of the country
+        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
 
-            # Get the english name of the country
-            country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
+        # Make the tweet string with weather data
+        tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
 
-            # Make the tweet string with weather data
-            tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
+        logger.info(f"Generating tweets for {city_name} {country_name}", exc_info=True)
 
-            logger.info(f"Generating tweets for {city_name} {country_name}", exc_info=True)
+        # Get photos for the tweet
+        media_ids, successful_images = get_photos(weather_main, city_name, country_name, api, logger)
 
-            # Get photos for the tweet
-            media_ids, successful_images = get_photos(weather_main, city_name, country_name, api, logger)
+        # Generate tweet with media 
+        api.update_status(status=tweet_string, media_ids=media_ids)
 
-            # Generate tweet with media 
-            api.update_status(status=tweet_string, media_ids=media_ids)
+        logger.info(f"Cleaning up images for {city_name} {country_name}", exc_info=True)
 
-            logger.info(f"Cleaning up images for {city_name} {country_name}", exc_info=True)
-
-            # Clean up the images
-            shutil.rmtree(f'images/{city_name} {country_name}')
-
-            # Pause for a 2 hours
-            sleep(7200)
-            #sleep(60) # FOR TESTING
+        # Clean up the images
+        shutil.rmtree(f'images/{city_name} {country_name}')
 
 if __name__ == "__main__":
    main()
