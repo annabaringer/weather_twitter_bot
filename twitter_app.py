@@ -1,10 +1,7 @@
-import tweepy, logging, requests, json, random
+import tweepy, logging, requests, json, random, shutil, os, ssl
 import pandas as pd
-import shutil
-import os 
 from time import sleep
 from bing_image_downloader import downloader
-import ssl
 
 def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret):
     '''
@@ -181,17 +178,17 @@ def get_weather_data(city_id, weather_api_key, country_name):
 
     tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
-    return tweet_string, weather_main, weather_name
+    return tweet_string, weather_desc, weather_name
 
 
-def get_photos(weather_main, city_name, country_name, api, logger):
+def get_photos(weather_desc, city_name, country_name, api, logger):
     '''
     Determines which photos to tweet out with the weather. Scrapes 3 pictures of the city from Bing.
     Adds one pre-determined picture based on the weather description.
 
         Parameters:
-            weather_main (string): the main description of the weather (eg. rain, snow, clouds)
-            city_name (string): the main description of the weather (eg. rain, snow, clouds)
+            weather_desc (string): the description of the weather (eg. rain, snow, clouds)
+            city_name (string): the name of the city
             country_name (string): the english country name of the randomly choosen city 
             api: api object already authenticated
             logger (logger object)
@@ -202,25 +199,22 @@ def get_photos(weather_main, city_name, country_name, api, logger):
     '''
 
     # Determine which picture to tweet for the weather
-    if weather_main.lower() in ['thunderstorm', 'drizzle', 'rain', 'snow', 'clear', 'clouds']:
-        image_path = f'images/{weather_main.lower()}.png'
-    else:
-        # Add picture of mist, have, dust etc.
-        image_path = 'images/mist.jpg'
+    downloader.download(f'{weather_desc}', limit=1,  output_dir='images', adult_filter_off=False, force_replace=False)
 
     # Scrape three pictures of the location
     downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
 
-    # Make sure it downloaded 3 images
-    pics = os.listdir(f'images/{city_name} {country_name}')
+    # Make sure it downloaded 3 images of city and 1 of weather 
+    city_pics = os.listdir(f'images/{city_name} {country_name}')
+    weather_pic = os.listdir(f'images/{weather_desc}')
 
-    if len(pics)==3:
+    if len(city_pics)==3 and len(weather_pic)==1:
         successful_images=True
 
         logger.info(f"Successful image download for {city_name} {country_name}", exc_info=True)
 
-    pics = [f'images/{city_name} {country_name}/{file}' for file in pics]
-    pics += [image_path]
+    pics = [f'images/{city_name} {country_name}/{file}' for file in city_pics]
+    pics += [f'images/{weather_desc}/{file}' for file in weather_pic]
     media_ids = [api.media_upload(i).media_id_string for i in pics] 
 
     return media_ids, successful_images
