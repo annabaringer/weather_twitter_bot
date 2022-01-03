@@ -141,8 +141,7 @@ def get_weather_data(city_id, weather_api_key, country_name):
     '''
 
     # Get current weather 
-    complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}"\
-        "&appid={weather_api_key}&units=imperial"
+    complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
     
     # Set a flag to keep track of a successful weather grab
     successful_weather = False
