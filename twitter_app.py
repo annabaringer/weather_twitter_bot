@@ -25,10 +25,10 @@ def authenticate_twitter(logger, consumer_key, consumer_secret, access_token, ac
 
     # Make sure the authentication works
     try:
-            api.verify_credentials()
+        api.verify_credentials()
     except Exception as e:
-            logger.error("Error creating API", exc_info=True)
-            raise e
+        logger.error("Error creating API", exc_info=True)
+        raise e
     
     return api
 
@@ -46,9 +46,9 @@ def read_cities(json_filename, logger):
     '''
 
     try:
-        f = open(json_filename)
-        city_dict = json.load(f)
-        f.close()
+        file = open(json_filename)
+        city_dict = json.load(file)
+        file.close()
     except Exception as e:
         logger.error("Error reading {json_filename}", exc_info=True)
         raise e
@@ -61,7 +61,8 @@ def read_country_crosswalk(filename, logger):
     Reads in the csv file of county abbrev and their long form english names
 
         Parameters:
-            filename (string): file name of the csv file with the county abbrev and their long form english names
+            filename (string): file name of the csv file with the county abbrev 
+                               and their long form english names
             logger (logger object)
             
         Returns:
@@ -105,7 +106,8 @@ def get_english_name(crosswalk_filename, country_code, logger):
     Gets the english name of the country abbreviation from the randomly choosen city. 
 
         Parameters:
-            crosswalk_filename (string): file name of the csv file with the county abbrev and their long form english names
+            crosswalk_filename (string): file name of the csv file with the county abbrev 
+                                         and their long form english names
             country_code: the county abbreviation of the randomly choosen city
             logger (logger object)
             
@@ -117,7 +119,8 @@ def get_english_name(crosswalk_filename, country_code, logger):
     country_codes = read_country_crosswalk(crosswalk_filename, logger)
 
     # Figure out the english name for the country 
-    country_name = country_codes.loc[country_codes['Alpha-2 code'] == country_code, 'English short name lower case'].iloc[0]
+    country_name = country_codes.loc[\
+        country_codes['Alpha-2 code'] == country_code, 'English short name lower case'].iloc[0]
 
     return country_name
 
@@ -138,12 +141,13 @@ def get_weather_data(city_id, weather_api_key, country_name):
     '''
 
     # Get current weather 
-    complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={weather_api_key}&units=imperial"
+    complete_url = f"http://api.openweathermap.org/data/2.5/weather?id={city_id}"\
+        "&appid={weather_api_key}&units=imperial"
     
     # Set a flag to keep track of a successful weather grab
     successful_weather = False
 
-    while(successful_weather == False):
+    while not successful_weather:
         # get the data
         response = requests.get(complete_url)
 
@@ -176,7 +180,8 @@ def get_weather_data(city_id, weather_api_key, country_name):
         else:
             emoji = '\U0001F301'
 
-    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}! With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
+    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}!"\
+        "With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
     return tweet_string, weather_desc, weather_name
 
@@ -199,10 +204,12 @@ def get_photos(weather_desc, city_name, country_name, api, logger):
     '''
 
     # Determine which picture to tweet for the weather
-    downloader.download(f'{weather_desc}', limit=1,  output_dir='images', adult_filter_off=False, force_replace=False)
+    downloader.download(f'{weather_desc}', limit=1,  output_dir='images', adult_filter_off=False, 
+                        force_replace=False)
 
     # Scrape three pictures of the location
-    downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', adult_filter_off=False, force_replace=False)
+    downloader.download(f'{city_name} {country_name}', limit=3,  output_dir='images', 
+                        adult_filter_off=False, force_replace=False)
 
     # Make sure it downloaded 3 images of city and 1 of weather 
     city_pics = os.listdir(f'images/{city_name} {country_name}')
@@ -227,7 +234,6 @@ def main():
     access_token_secret = os.environ['access_token_secret']
     weather_api_key = os.environ['weather_api_key']
     
-
     ssl._create_default_https_context = ssl._create_unverified_context
 
     # Create a logger
@@ -235,7 +241,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     # Authenticate to Twitter
-    api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, access_token_secret)
+    api = authenticate_twitter(logger, consumer_key, consumer_secret, access_token, 
+                               access_token_secret)
 
     # Read in the list of cities available from the api
     city_dict = read_cities('data/city.list.json', logger)
@@ -248,15 +255,18 @@ def main():
         city_id, country_code = choose_random_city(city_dict)
 
         # Get the english name of the country
-        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, logger)
+        country_name = get_english_name('data/wikipedia-iso-country-codes.csv', country_code, 
+                                        logger)
 
         # Make the tweet string with weather data
-        tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, country_name)
+        tweet_string, weather_main, city_name = get_weather_data(city_id, weather_api_key, 
+                                                                 country_name)
 
         logger.info(f"Generating tweets for {city_name} {country_name}", exc_info=True)
 
         # Get photos for the tweet
-        media_ids, successful_images = get_photos(weather_main, city_name, country_name, api, logger)
+        media_ids, successful_images = get_photos(weather_main, city_name, country_name, 
+                                                  api, logger)
 
         # Generate tweet with media 
         api.update_status(status=tweet_string, media_ids=media_ids)
@@ -267,4 +277,4 @@ def main():
         shutil.rmtree(f'images/{city_name} {country_name}')
 
 if __name__ == "__main__":
-   main()
+    main()
