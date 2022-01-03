@@ -179,8 +179,8 @@ def get_weather_data(city_id, weather_api_key, country_name):
         else:
             emoji = '\U0001F301'
 
-    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}!"\
-        "With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
+    tweet_string=f'It is {weather_temp}F in {weather_name}, {country_name} {emoji}! '
+        + 'With {weather_desc} and {weather_humidity}% humidity, it feels like {weather_feelslike}F.'
 
     return tweet_string, weather_desc, weather_name
 
